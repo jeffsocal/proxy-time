@@ -1,0 +1,22 @@
+{
+  "name": "jeffsocal/proxy-time",
+  "type": "library",
+  "description": "PHP simple timer and progress timer",
+  "keywords": ["Boostrap"],
+  "homepage": "https://github.com/jeffsocal/proxy-time/",
+  "require": {
+    "php": ">=7.0.0"
+  },
+  "autoload": {
+    "psr-4": { "ProxyTime\\": "src/" }
+  },
+  "authors": [
+    {
+      "name": "Jeff Jones",
+      "email": "jeff@socalbioinformatics.com",
+      "homepage": "https://github.com/jeffsocal",
+      "role": "Developer"
+    }
+  ],
+  "license": "MIT"
+}
