@@ -13,17 +13,17 @@ class ProgressTimer extends Timer
 
     private $showMemory;
 
-    private $fractionText;
+    private $progressText;
 
-    private $fractionStep;
+    private $progressStep;
 
-    private $fractionStepUp;
+    private $progressStepUp;
 
-    private $fractionStepSize;
+    private $progressStepSize;
 
-    private $showFractionTime;
+    private $showprogressTime;
 
-    private $fractionStartUnixTime;
+    private $progressStartUnixTime;
 
     private $secTotal;
 
@@ -32,90 +32,123 @@ class ProgressTimer extends Timer
     function __construct($pad_length = 30)
     {
         parent::__construct();
-        $this->fractionStep = 0;
-        $this->fractionStepUp = 0.001;
-        $this->fractionStepSize = 10;
-        $this->showFractionTime = false;
+        $this->progressStep = 0;
+        $this->progressStepUp = 0.001;
+        $this->progressStepSize = 10;
+        $this->showprogressTime = false;
         $this->showMemory = false;
         $this->textPadLength = $pad_length;
     }
 
-    public function fractionalTimerStart($text = "fraction complete\n")
+    public function start($text = "progress ", $size = 10)
     {
-        $this->fractionText = $text;
-        $this->fractionStepCount = 0;
-        $this->fractionStep = 0;
-        $this->start();
-        $this->fractionStartUnixTime = date('U');
+        $this->progressText = $text;
+        $this->progressStepSize = $size;
+        $this->progressStepCount = 0;
+        $this->progressStep = 0;
+        $this->progressStartUnixTime = date('U');
         $this->secTotal = array();
     }
 
-    public function fractionalTimerSize($size = 10)
+    public function percentStep($size = 10)
     {
-        $this->fractionStepSize = $size;
+        $this->progressStepUp = $size / 100;
+        $this->progressStep = $this->progressStepUp;
     }
 
-    public function fractionalTimerPercentStep($size = 10)
+    public function showTime($boolean = false)
     {
-        $this->fractionStepUp = $size / 100;
-        $this->fractionStep = $this->fractionStepUp;
+        $this->showprogressTime = $boolean;
     }
 
-    public function fractionalTimerShowTime($boolean = false)
-    {
-        $this->showFractionTime = $boolean;
-    }
-
-    public function fractionalTimerShowMemory($boolean = false)
+    public function showMemory($boolean = false)
     {
         $this->showMemory = $boolean;
     }
 
-    public function fractionalTimerPrint()
+    public function barPercent()
     {
-        $this->fractionStepCount ++;
-        $fraction = $this->fractionStepCount / $this->fractionStepSize;
-        if ($fraction == 1 or $fraction >= $this->fractionStep) {
-            $this->showProgressBar($fraction);
-            $this->fractionStep += $this->fractionStepUp;
+        $this->progressStepCount ++;
+        $progress = $this->progressStepCount / $this->progressStepSize;
+        if ($progress == 1 or $progress >= $this->progressStep) {
+            $this->showProgressBar();
+            $this->progressStep += $this->progressStepUp;
         }
+    }
+
+    public function barCount($chunk = 1000, $subn = FALSE)
+    {
+        $this->progressStepCount ++;
+        if ($this->progressStepCount % $chunk == 0)
+            $this->showCountBar($subn);
+    }
+
+    private function showCountBar($subn = FALSE)
+    {
+        $barSize = $this->textPadLength - strlen($this->progressText) - 1;
+        
+        $time_start = $this->progressStartUnixTime;
+        $time_now = date('U');
+        
+        $status_bar = "\r$this->progressText ";
+        $status_bar .= str_repeat(".", $barLength);
+        if ($barLength < $barSize) {
+            $status_bar .= str_repeat(".", ($barSize - $barLength));
+        }
+        
+        $elapsed = $time_now - $time_start;
+        $rate = $elapsed / $this->progressStepCount;
+        
+        $status_bar .= " time:" . time_toString($elapsed);
+        $status_bar .= " n:";
+        if (! is_false($subn))
+            $status_bar .= $subn . '/';
+        
+        $status_bar .= $this->progressStepCount;
+        
+        if ($rate > 0)
+            $status_bar .= " rate:" . round(1 / $rate, 1) . "/sec ";
+        
+        echo str_pad($status_bar, $this->textPadLength + 50, " ", STR_PAD_RIGHT);
+        
+        flush();
     }
 
     private function showProgressBar()
     {
-        $barSize = $this->textPadLength - strlen($this->fractionText) - 1;
+        $barSize = $this->textPadLength - strlen($this->progressText) - 1;
         
         // if we go over our bound, just ignore it
-        if ($this->fractionStepCount > $this->fractionStepSize)
+        if ($this->progressStepCount > $this->progressStepSize)
             return;
         
-        $time_start = $this->fractionStartUnixTime;
+        $time_start = $this->progressStartUnixTime;
         $time_now = date('U');
         
-        $fracDone = ($this->fractionStepCount / $this->fractionStepSize);
+        $progDone = ($this->progressStepCount / $this->progressStepSize);
         
-        $barLength = floor($fracDone * $barSize);
+        $barLength = floor($progDone * $barSize);
         
-        $status_bar = "\r$this->fractionText ";
+        $status_bar = "\r$this->progressText ";
         $status_bar .= str_repeat(".", $barLength);
         if ($barLength < $barSize) {
             $status_bar .= str_repeat(" ", ($barSize - $barLength));
         }
         
-        $dispFracDone = round($fracDone * 100, 0);
+        $dispProgDone = round($progDone * 100, 0);
         
         $elapsed = $time_now - $time_start;
-        $rate = $elapsed / $this->fractionStepCount;
-        $left = $this->fractionStepSize - $this->fractionStepCount;
+        $rate = $elapsed / $this->progressStepCount;
+        $left = $this->progressStepSize - $this->progressStepCount;
         $eta = round($rate * $left);
         
-        if ($this->fractionStepCount == $this->fractionStepSize) {
+        if ($this->progressStepCount == $this->progressStepSize) {
             $status_bar .= " " . time_toString($elapsed);
         } elseif ($eta < 60 * 60) {
-            $status_bar .= " $dispFracDone% ";
+            $status_bar .= " $dispProgDone% ";
             $status_bar .= " elapsed: " . time_toString($elapsed) . " remaining: " . time_toString($eta);
         } else {
-            $status_bar .= " $dispFracDone% ";
+            $status_bar .= " $dispProgDone% ";
             $eta = date("H:i:s", $time_now + $eta);
             $status_bar .= " finished at: $eta elapsed: " . time_toString($elapsed);
         }
@@ -125,7 +158,7 @@ class ProgressTimer extends Timer
         flush();
         
         // when done, send a newline
-        if ($this->fractionStepCount == $this->fractionStepSize) {
+        if ($this->progressStepCount == $this->progressStepSize) {
             echo "\n";
         }
     }
