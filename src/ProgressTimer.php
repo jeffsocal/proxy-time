@@ -86,9 +86,12 @@ class ProgressTimer extends Timer
     private function showCountBar($subn = FALSE)
     {
         $barSize = $this->textPadLength - strlen($this->progressText) - 1;
-        
+
         $time_start = $this->progressStartUnixTime;
         $time_now = date('U');
+        
+        $progDone = ($this->progressStepCount / $this->progressStepSize);
+        $barLength = floor($progDone * $barSize);
         
         $status_bar = "\r$this->progressText ";
         $status_bar .= str_repeat(".", $barLength);
