@@ -8,162 +8,132 @@
  */
 namespace ProxyTime;
 
+use ProxyIO\Cli;
+
 class ProgressTimer extends Timer
 {
 
-    private $showMemory;
+    private $show_memory;
 
-    private $progressText;
+    private $show_progress;
 
-    private $progressStep;
+    private $step;
 
-    private $progressStepUp;
+    private $step_size;
 
-    private $progressStepSize;
+    private $step_count;
 
-    private $showprogressTime;
+    private $array_secs;
 
-    private $progressStartUnixTime;
+    private $start_time_unix;
 
-    private $secTotal;
+    private $has_echo_nl;
 
-    private $textPadLength;
+    public $cli;
 
-    function __construct($pad_length = 30)
+    function __construct()
     {
         parent::__construct();
-        $this->progressStep = 0;
-        $this->progressStepUp = 0.001;
-        $this->progressStepSize = 10;
-        $this->showprogressTime = false;
-        $this->showMemory = false;
-        $this->textPadLength = $pad_length;
+        $this->cli = new Cli();
+        $this->show_progress = false;
+        $this->show_memory = false;
     }
 
-    public function start($text = "progress ", $size = 10)
+    public function start(string $text = "progress ", int $size = NULL)
     {
-        $this->progressText = $text;
-        $this->progressStepSize = $size;
-        $this->progressStepCount = 0;
-        $this->progressStep = 0;
-        $this->progressStartUnixTime = date('U');
-        $this->secTotal = array();
+        $this->text = $text;
+        $this->step_size = $size;
+        $this->start_time_unix = date('U');
+        $this->array_secs = array();
+        $this->has_echo_nl = FALSE;
     }
 
-    public function percentStep($size = 10)
+    public function showProgress(bool $boolean = false)
     {
-        $this->progressStepUp = $size / 100;
-        $this->progressStep = $this->progressStepUp;
+        $this->show_progress = $boolean;
     }
 
-    public function showTime($boolean = false)
+    public function showMemory(bool $boolean = false)
     {
-        $this->showprogressTime = $boolean;
+        $this->show_memory = $boolean;
     }
 
-    public function showMemory($boolean = false)
+    public function barPercent(int $percent = 1)
     {
-        $this->showMemory = $boolean;
+        $this->step_count ++;
+        $progress = $this->step_count / $this->step_size;
+        if ($progress <= 1 and $progress % $percent == 0)
+            $this->showProgressBar($progress);
+        
+        // if ($progress >= 1 & is_false($this->has_echo_nl)) {
+        // $this->has_echo_nl = TRUE;
+        // echo PHP_EOL;
+        // }
     }
 
-    public function barPercent()
+    public function barCount(int $chunk = 1000, $subn = FALSE)
     {
-        $this->progressStepCount ++;
-        $progress = $this->progressStepCount / $this->progressStepSize;
-        if ($progress == 1 or $progress >= $this->progressStep) {
-            $this->showProgressBar();
-            $this->progressStep += $this->progressStepUp;
-        }
-    }
-
-    public function barCount($chunk = 1000, $subn = FALSE)
-    {
-        $this->progressStepCount ++;
-        if ($this->progressStepCount % $chunk == 0)
+        $this->step_count ++;
+        if ($this->step_count % $chunk == 0)
             $this->showCountBar($subn);
+    }
+
+    private function elapsedTime()
+    {
+        return date('U') - $this->start_time_unix;
     }
 
     private function showCountBar($subn = FALSE)
     {
-        $barSize = $this->textPadLength - strlen($this->progressText) - 1;
-
-        $time_start = $this->progressStartUnixTime;
-        $time_now = date('U');
+        $elapsed = $this->elapsedTime();
+        $rate = $elapsed / $this->step_count;
         
-        $progDone = ($this->progressStepCount / $this->progressStepSize);
-        $barLength = floor($progDone * $barSize);
+        $str_left = $this->text;
         
-        $status_bar = "\r$this->progressText ";
-        $status_bar .= str_repeat(".", $barLength);
-        if ($barLength < $barSize) {
-            $status_bar .= str_repeat(".", ($barSize - $barLength));
-        }
+        $str_rght = time_toString($elapsed);
+        $str_rght .= " n:";
         
-        $elapsed = $time_now - $time_start;
-        $rate = $elapsed / $this->progressStepCount;
-        
-        $status_bar .= " time:" . time_toString($elapsed);
-        $status_bar .= " n:";
         if (! is_false($subn))
-            $status_bar .= $subn . '/';
+            $str_rght .= $subn . '/';
         
-        $status_bar .= $this->progressStepCount;
+        $str_rght .= $this->step_count;
         
         if ($rate > 0)
-            $status_bar .= " rate:" . round(1 / $rate, 1) . "/sec ";
+            $str_rght .= " rate:" . round(1 / $rate, 1) . "/sec ";
         
-        echo str_pad($status_bar, $this->textPadLength + 50, " ", STR_PAD_RIGHT);
-        
-        flush();
+        $this->cli->flush($str_left, $str_rght);
     }
 
-    private function showProgressBar()
+    private function showProgressBar(float $progress)
     {
-        $barSize = $this->textPadLength - strlen($this->progressText) - 1;
+        $str_left = $this->text;
+        $str_rght = '';
         
-        // if we go over our bound, just ignore it
-        if ($this->progressStepCount > $this->progressStepSize)
-            return;
+        $msg_leng = $this->cli->getValueStrLength();
         
-        $time_start = $this->progressStartUnixTime;
-        $time_now = date('U');
-        
-        $progDone = ($this->progressStepCount / $this->progressStepSize);
-        
-        $barLength = floor($progDone * $barSize);
-        
-        $status_bar = "\r$this->progressText ";
-        $status_bar .= str_repeat(".", $barLength);
-        if ($barLength < $barSize) {
-            $status_bar .= str_repeat(" ", ($barSize - $barLength));
-        }
-        
-        $dispProgDone = round($progDone * 100, 0);
-        
-        $elapsed = $time_now - $time_start;
-        $rate = $elapsed / $this->progressStepCount;
-        $left = $this->progressStepSize - $this->progressStepCount;
+        $elapsed = $this->elapsedTime();
+        $rate = $elapsed / $this->step_count;
+        $left = $this->step_size - $this->step_count;
         $eta = round($rate * $left);
+        if ($eta < 60 * 60)
+            $str_eta = time_toString($eta);
+        else
+            $str_eta = date("H:i:s", $time_now + $eta);
         
-        if ($this->progressStepCount == $this->progressStepSize) {
-            $status_bar .= " " . time_toString($elapsed);
-        } elseif ($eta < 60 * 60) {
-            $status_bar .= " $dispProgDone% ";
-            $status_bar .= " elapsed: " . time_toString($elapsed) . " remaining: " . time_toString($eta);
-        } else {
-            $status_bar .= " $dispProgDone% ";
-            $eta = date("H:i:s", $time_now + $eta);
-            $status_bar .= " finished at: $eta elapsed: " . time_toString($elapsed);
+        $str_bar = '';
+        $str_prg = time_toString($elapsed);
+        $str_prc = str_pad(round($progress * 100, 0) . '%', 5, ' ');
+        $len_bar = $msg_leng - 2 - strlen($str_prg) - strlen($str_prc) - strlen($str_eta);
+        if ($len_bar >= 1) {
+            $len_prc = floor($len_bar * $progress);
+            $str_bar = '[' . str_pad(str_repeat("=", $len_prc), $len_bar, ' ', STR_PAD_RIGHT) . ']';
         }
         
-        echo str_pad($status_bar, $this->textPadLength + 50, " ", STR_PAD_RIGHT);
+        $str_rght = $str_prc . $str_bar . ' ' . $str_eta;
+        if ($this->step_count == $this->step_size)
+            $str_rght = $str_prg;
         
-        flush();
-        
-        // when done, send a newline
-        if ($this->progressStepCount == $this->progressStepSize) {
-            echo "\n";
-        }
+        $this->cli->flush($str_left, $str_rght);
     }
 }
 
