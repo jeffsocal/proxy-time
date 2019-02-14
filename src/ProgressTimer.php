@@ -48,6 +48,13 @@ class ProgressTimer extends Timer
         $this->has_echo_nl = FALSE;
     }
 
+    public function print()
+    {
+        $str_left = $this->text;
+        $str_rght = time_toString($this->elapsedTime());
+        $this->cli->message($str_left, $str_rght);
+    }
+
     public function showProgress(bool $boolean = false)
     {
         $this->show_progress = $boolean;
@@ -120,16 +127,18 @@ class ProgressTimer extends Timer
         else
             $str_eta = date("H:i:s", $time_now + $eta);
         
+        $str_eta = str_pad($str_eta, 10, ' ');
+        
         $str_bar = '';
         $str_prg = time_toString($elapsed);
         $str_prc = str_pad(round($progress * 100, 0) . '%', 5, ' ');
-        $len_bar = $msg_leng - 2 - strlen($str_prg) - strlen($str_prc) - strlen($str_eta);
+        $len_bar = min(15, $msg_leng - 5 - strlen($str_prg) - strlen($str_prc) - strlen($str_eta));
         if ($len_bar >= 1) {
             $len_prc = floor($len_bar * $progress);
             $str_bar = '[' . str_pad(str_repeat("=", $len_prc), $len_bar, ' ', STR_PAD_RIGHT) . ']';
         }
         
-        $str_rght = $str_prc . $str_bar . ' ' . $str_eta;
+        $str_rght = $str_prc . $str_prg . ' ' . $str_bar . ' ' . $str_eta;
         if ($this->step_count == $this->step_size)
             $str_rght = $str_prg;
         
