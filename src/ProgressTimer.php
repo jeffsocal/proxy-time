@@ -48,6 +48,16 @@ class ProgressTimer extends Timer
         $this->has_echo_nl = FALSE;
     }
 
+    public function message($prompt = null, $message = null)
+    {
+        $this->cli->message($prompt, $message);
+    }
+
+    public function header($prompt = null, $exit = false)
+    {
+        $this->cli->header($prompt, $exit);
+    }
+
     public function print()
     {
         $str_left = $this->text;
@@ -72,10 +82,10 @@ class ProgressTimer extends Timer
         if ($progress <= 1 and $progress % $percent == 0)
             $this->showProgressBar($progress);
         
-        // if ($progress >= 1 & is_false($this->has_echo_nl)) {
-        // $this->has_echo_nl = TRUE;
-        // echo PHP_EOL;
-        // }
+        if ($progress >= 1 & is_false($this->has_echo_nl)) {
+            $this->has_echo_nl = TRUE;
+            echo PHP_EOL;
+        }
     }
 
     public function barCount(int $chunk = 1000, $subn = FALSE)
