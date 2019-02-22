@@ -43,6 +43,7 @@ class ProgressTimer extends Timer
     {
         $this->text = $text;
         $this->step_size = $size;
+        $this->step_count = 0;
         $this->start_time_unix = date('U');
         $this->array_secs = array();
         $this->has_echo_nl = FALSE;
