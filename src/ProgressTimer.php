@@ -136,7 +136,7 @@ class ProgressTimer extends Timer
         if ($eta < 60 * 60)
             $str_eta = time_toString($eta);
         else
-            $str_eta = date("H:i:s", $time_now + $eta);
+            $str_eta = date("H:i:s", date('U') + $eta);
         
         $str_eta = str_pad($str_eta, 10, ' ');
         
