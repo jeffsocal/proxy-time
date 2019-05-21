@@ -83,10 +83,8 @@ class ProgressTimer extends Timer
         if ($progress <= 1 and $progress % $percent == 0)
             $this->showProgressBar($progress);
         
-        if ($progress >= 1 & is_false($this->has_echo_nl)) {
-            $this->has_echo_nl = TRUE;
-            echo PHP_EOL;
-        }
+        if ($progress >= 1 & is_false($this->has_echo_nl))
+            $this->showProgressBar($progress, TRUE);
     }
 
     public function barCount(int $chunk = 1000, $subn = FALSE)
@@ -101,7 +99,7 @@ class ProgressTimer extends Timer
         return date('U') - $this->start_time_unix;
     }
 
-    private function showCountBar($subn = FALSE)
+    private function showCountBar($subn = FALSE, bool $is_end = FALSE)
     {
         $elapsed = $this->elapsedTime();
         $rate = $elapsed / $this->step_count;
@@ -119,10 +117,13 @@ class ProgressTimer extends Timer
         if ($rate > 0)
             $str_rght .= " rate:" . round(1 / $rate, 1) . "/sec ";
         
-        $this->cli->flush($str_left, $str_rght);
+        if ($is_end == TRUE)
+            $this->cli->flusheol($str_left, $str_rght);
+        else
+            $this->cli->flush($str_left, $str_rght);
     }
 
-    private function showProgressBar(float $progress)
+    private function showProgressBar(float $progress, bool $is_end = FALSE)
     {
         $str_left = $this->text;
         $str_rght = '';
@@ -153,7 +154,10 @@ class ProgressTimer extends Timer
         if ($this->step_count == $this->step_size)
             $str_rght = $str_prg;
         
-        $this->cli->flush($str_left, $str_rght);
+        if ($is_end == TRUE)
+            $this->cli->flusheol($str_left, $str_rght);
+        else
+            $this->cli->flush($str_left, $str_rght);
     }
 }
 
