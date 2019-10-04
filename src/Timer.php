@@ -25,7 +25,7 @@ class Timer
         return microtime(TRUE);
     }
 
-    protected function start()
+    function start()
     {
         $this->time_start = $this->getTime();
     }
